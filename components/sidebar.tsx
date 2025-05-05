@@ -23,6 +23,7 @@ import {
   HelpCircle,
   Bell,
   User,
+  Palette,
 } from "lucide-react"
 
 const navItems = [
@@ -65,6 +66,11 @@ const navItems = [
     title: "Video Players",
     href: "/dashboard/video-players",
     icon: Video,
+  },
+  {
+    title: "Design Tool",
+    href: "/dashboard/design-tool",
+    icon: Palette,
   },
 ]
 
@@ -171,7 +177,7 @@ export function Sidebar() {
       <div className="flex h-16 items-center border-b px-4">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
           <LayoutDashboard className="h-6 w-6 text-primary" />
-          <span className="text-lg">Manual Testing</span>
+          <span className="text-lg">Testing Admin Panel</span>
         </Link>
       </div>
       <ScrollArea className="h-[calc(100vh-4rem)] pb-10">
