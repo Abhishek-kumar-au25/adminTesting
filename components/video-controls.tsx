@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
@@ -9,15 +9,23 @@ import { Label } from "@/components/ui/label"
 import { Play, Pause, Volume2, VolumeX, RefreshCw, CheckCircle2, SkipBack, SkipForward, Download } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 
-export function VideoControls() {
+export default function VideoControls() {
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(true)
   const [volume, setVolume] = useState([50])
   const [syncChecking, setSyncChecking] = useState(false)
   const [showTimers, setShowTimers] = useState(true)
   const [layout, setLayout] = useState("grid")
+  const [isBrowser, setIsBrowser] = useState(false)
+
+  // Check if we're in the browser
+  useEffect(() => {
+    setIsBrowser(true)
+  }, [])
 
   const handlePlayPause = () => {
+    if (!isBrowser) return
+
     // Create a custom event that the VideoGrid component will listen for
     const event = new CustomEvent("video-play-pause", {
       detail: { playing: !playing },
@@ -32,6 +40,8 @@ export function VideoControls() {
   }
 
   const handleMuteToggle = () => {
+    if (!isBrowser) return
+
     // Create a custom event that the VideoGrid component will listen for
     const event = new CustomEvent("video-mute-toggle", {
       detail: { muted: !muted },
@@ -41,6 +51,8 @@ export function VideoControls() {
   }
 
   const handleVolumeChange = (value: number[]) => {
+    if (!isBrowser) return
+
     setVolume(value)
     // Create a custom event that the VideoGrid component will listen for
     const event = new CustomEvent("video-volume-change", {
@@ -62,6 +74,8 @@ export function VideoControls() {
   }
 
   const handleRestart = () => {
+    if (!isBrowser) return
+
     // Create a custom event to restart all videos
     const pauseEvent = new CustomEvent("video-play-pause", {
       detail: { playing: false },
@@ -90,6 +104,8 @@ export function VideoControls() {
   }
 
   const handleSkipForward = () => {
+    if (!isBrowser) return
+
     // Skip all videos forward by 10 seconds
     const videos = document.querySelectorAll("video")
     videos.forEach((video) => {
@@ -103,6 +119,8 @@ export function VideoControls() {
   }
 
   const handleSkipBackward = () => {
+    if (!isBrowser) return
+
     // Skip all videos backward by 10 seconds
     const videos = document.querySelectorAll("video")
     videos.forEach((video) => {
@@ -116,6 +134,17 @@ export function VideoControls() {
   }
 
   const handleDownloadReport = () => {
+    if (!isBrowser) return
+
+    if (!document.querySelectorAll("video").length) {
+      toast({
+        title: "No audio to download",
+        description: "Please upload an audio file first",
+        variant: "destructive",
+      })
+      return
+    }
+
     // Simulate generating a report
     toast({
       title: "Generating video report",
@@ -156,6 +185,10 @@ export function VideoControls() {
         description: "Your video playback report has been downloaded",
       })
     }, 1500)
+  }
+
+  if (!isBrowser) {
+    return <div className="h-16 animate-pulse bg-muted rounded-md"></div>
   }
 
   return (

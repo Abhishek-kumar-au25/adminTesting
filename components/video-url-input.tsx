@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -11,13 +11,19 @@ import { Plus, Trash2, RefreshCw, Link, FileVideo, Globe, Upload, X } from "luci
 import { Progress } from "@/components/ui/progress"
 import { toast } from "@/components/ui/use-toast"
 
-export function VideoUrlInput() {
+export default function VideoUrlInput() {
   const [urls, setUrls] = useState<string[]>([])
   const [newUrl, setNewUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isBrowser, setIsBrowser] = useState(false)
+
+  // Check if we're in the browser
+  useEffect(() => {
+    setIsBrowser(true)
+  }, [])
 
   const handleAddUrl = () => {
     if (newUrl && urls.length < 12) {
@@ -25,7 +31,7 @@ export function VideoUrlInput() {
       setNewUrl("")
 
       // Add to video grid
-      if (typeof window.addVideoUrl === "function") {
+      if (isBrowser && typeof window.addVideoUrl === "function") {
         window.addVideoUrl(newUrl)
       }
 
@@ -48,11 +54,13 @@ export function VideoUrlInput() {
     setTimeout(() => {
       setLoading(false)
 
-      // Trigger play on all videos
-      const event = new CustomEvent("video-play-pause", {
-        detail: { playing: true },
-      })
-      window.dispatchEvent(event)
+      if (isBrowser) {
+        // Trigger play on all videos
+        const event = new CustomEvent("video-play-pause", {
+          detail: { playing: true },
+        })
+        window.dispatchEvent(event)
+      }
 
       toast({
         title: "Videos loaded",
@@ -69,6 +77,8 @@ export function VideoUrlInput() {
   }
 
   const handleFiles = (files: File[]) => {
+    if (!isBrowser) return
+
     // Filter for video files
     const videoFiles = files.filter(
       (file) =>
@@ -138,13 +148,17 @@ export function VideoUrlInput() {
 
   const clearAllVideos = () => {
     setUrls([])
-    if (typeof window.clearVideos === "function") {
+    if (isBrowser && typeof window.clearVideos === "function") {
       window.clearVideos()
     }
     toast({
       title: "All videos cleared",
       description: "All videos have been removed from the player.",
     })
+  }
+
+  if (!isBrowser) {
+    return <div className="h-20 animate-pulse bg-muted rounded-md"></div>
   }
 
   return (

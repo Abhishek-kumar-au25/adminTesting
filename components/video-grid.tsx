@@ -7,7 +7,16 @@ import { Button } from "@/components/ui/button"
 import { AlertTriangle, Maximize2, Volume2, VolumeX, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export function VideoGrid() {
+// Define a global interface to make TypeScript happy
+declare global {
+  interface Window {
+    addVideoUrl?: (url: string) => void
+    addVideoFile?: (file: File) => void
+    clearVideos?: () => void
+  }
+}
+
+export default function VideoGrid() {
   const [videoUrls, setVideoUrls] = useState<string[]>([])
   const [videoFiles, setVideoFiles] = useState<File[]>([])
   const [videoSources, setVideoSources] = useState<string[]>([])
@@ -19,34 +28,48 @@ export function VideoGrid() {
   const [videoErrors, setVideoErrors] = useState<boolean[]>([])
   const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null)
   const [individualMuted, setIndividualMuted] = useState<boolean[]>([])
+  const [isBrowser, setIsBrowser] = useState(false)
+
+  // Check if we're in the browser
+  useEffect(() => {
+    setIsBrowser(true)
+  }, [])
 
   // Initialize video refs and states when sources change
   useEffect(() => {
+    if (!isBrowser) return
+
     videoRefs.current = videoRefs.current.slice(0, videoSources.length)
     setCurrentTimes(Array(videoSources.length).fill(0))
     setDurations(Array(videoSources.length).fill(0))
     setVideoErrors(Array(videoSources.length).fill(false))
     setIndividualMuted(Array(videoSources.length).fill(muted))
-  }, [videoSources, muted])
+  }, [videoSources, muted, isBrowser])
 
   // Update video sources when URLs or files change
   useEffect(() => {
+    if (!isBrowser) return
+
     const sources = [...videoUrls, ...videoFiles.map((file) => URL.createObjectURL(file))]
     setVideoSources(sources)
-  }, [videoUrls, videoFiles])
+  }, [videoUrls, videoFiles, isBrowser])
 
   // Update current times
   useEffect(() => {
+    if (!isBrowser) return
+
     const interval = setInterval(() => {
       const newCurrentTimes = videoRefs.current.map((ref) => ref?.currentTime || 0)
       setCurrentTimes(newCurrentTimes)
     }, 250)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [isBrowser])
 
   // Listen for global play/pause events
   useEffect(() => {
+    if (!isBrowser) return
+
     const handlePlayPause = (e: CustomEvent) => {
       const newPlayingState = e.detail.playing
       setPlaying(newPlayingState)
@@ -98,7 +121,7 @@ export function VideoGrid() {
       window.removeEventListener("video-mute-toggle" as any, handleMuteToggle as any)
       window.removeEventListener("video-volume-change" as any, handleVolumeChange as any)
     }
-  }, [videoErrors, videoSources.length])
+  }, [videoErrors, videoSources.length, isBrowser])
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60)
@@ -179,6 +202,8 @@ export function VideoGrid() {
 
   // Expose methods to parent components
   useEffect(() => {
+    if (!isBrowser) return
+
     // @ts-ignore - Custom event handling
     window.addVideoUrl = addVideoUrl
     // @ts-ignore - Custom event handling
@@ -201,7 +226,7 @@ export function VideoGrid() {
       // @ts-ignore - Cleanup
       delete window.clearVideos
     }
-  }, [addVideoUrl, addVideoFile, videoFiles, videoSources, videoUrls.length])
+  }, [addVideoUrl, addVideoFile, videoFiles, videoSources, videoUrls.length, isBrowser])
 
   const getGridCols = () => {
     const count = videoSources.length
@@ -212,6 +237,10 @@ export function VideoGrid() {
     if (count <= 6) return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
     if (count <= 9) return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
     return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+  }
+
+  if (!isBrowser) {
+    return <div className="h-64 animate-pulse bg-muted rounded-md"></div>
   }
 
   if (videoSources.length === 0) {
